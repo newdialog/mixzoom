@@ -8,7 +8,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 var email, userid, resp;
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 config.APIKey = process.env.API_KEY || config.APIKey;
 config.APISecret = process.env.API_SECRET || config.APISecret;
