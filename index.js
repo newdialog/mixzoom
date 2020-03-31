@@ -1,9 +1,16 @@
 //include required modules
+const NodeCache = require("node-cache");
+const cache = new NodeCache({
+    stdTTL: 60 * 60 * 3,
+    deleteOnExpire: true
+});
+
 const jwt = require('jsonwebtoken');
 const config = require('./config');
 const rp = require('request-promise');
 
 const express = require('express');
+
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -23,96 +30,147 @@ function makeToken() {
     return token;
 }
 
-
-//get the form 
-app.get('/', (req,res) => res.send(req.body));
-
-app.post('/make', (req, res) => {
+function generate(res, key) {
     const token = makeToken();
     const email = 'me'; // req.body.email;
-  //check if the email was stored in the console
-  console.log('/make');
-  //Store the options for Zoom API which will be used to make an API call later.
-  var options = {
-    method: 'POST',
-    body: {
-    },
-    //You can use a different uri if you're making an API call to a different Zoom endpoint.
-    uri: "https://api.zoom.us/v2/users/"+email+"/meetings", 
-    qs: {
-        status: 'active' 
-    },
-    auth: {
-        'bearer': token
-    },
-    headers: {
-        'User-Agent': 'Zoom-api-Jwt-Request',
-        'content-type': 'application/json'
-    },
-    json: true //Parse the JSON string in the response
-};
+    //check if the email was stored in the console
+    console.log('/making key');
+    //Store the options for Zoom API which will be used to make an API call later.
+    var options = {
+        method: 'POST',
+        body: {
+        },
+        //You can use a different uri if you're making an API call to a different Zoom endpoint.
+        uri: "https://api.zoom.us/v2/users/" + email + "/meetings",
+        qs: {
+            status: 'active'
+        },
+        auth: {
+            'bearer': token
+        },
+        headers: {
+            'User-Agent': 'Zoom-api-Jwt-Request',
+            'content-type': 'application/json'
+        },
+        json: true //Parse the JSON string in the response
+    };
 
-//Use request-promise module's .then() method to make request calls.
-rp(options)
-    .then(function (response) {
-      //printing the response on the console
-        console.log('User has', response);
-        //console.log(typeof response);
-        resp = response
-        res.send(resp);
- 
-    })
-    .catch(function (err) {
-        // API call failed...
-        console.log('API call failed, reason ', err);
+    //Use request-promise module's .then() method to make request calls.
+    rp(options)
+        .then(function (response) {
+            // cache[key] = response;
+            cache.set(key, response);
+            //printing the response on the console
+            console.log('User has', response);
+            //console.log(typeof response);
+            resp = response
+            res.send(resp);
+
+        })
+        .catch(function (err) {
+            // API call failed...
+            console.log('API call failed, reason ', err);
+        });
+}
+
+
+//get the form 
+app.get('/', (req, res) => res.send(req.body));
+
+function getKey(meeting) {
+    const d = new Date();
+    const day = d.getDate();
+    // const meeting = req.meeting;
+    const key = meeting + '-' + day;
+    console.log('key', key);
+    return key;
+}
+
+// let cache = {};
+function onOnce(key) {
+    const cb = ( key, value ) => {
+        if(key===key) {
+            cache.removeListener("set", cb);
+            res(cache.get(key));
+        }
+    };
+
+    return new Promise( (res)=>{
+        cache.on("set", cb);
     });
+}
 
+app.post('/make/:meeting', (req, res) => {
+    const meeting = req.params.meeting;
+    const key = getKey(meeting);
+    // ------
+    // if(MemoryStorage.[key]) return cache[key];
+    const hasKey = cache.has(key);
+    const hasKeyLoading = cache.has(key+'Loading');
 
+    // result => boolean
+    if (hasKey) {
+        console.log('key exists');
+        const data = cache.get(key);
+        res.send(data);
+    }
+
+    if (!hasKey) {
+        if(!hasKeyLoading) {
+            console.log('fetching key');
+            cache.set(key+'Loading', true);
+            generate(res, key);
+        } else {
+            console.log('waiting on key');
+            const data = onOnce(key);
+            res.send(data);
+        }
+    }
 });
 
 //use userinfo from the form and make a post request to /userinfo
 app.post('/userinfo', (req, res) => {
-  //store the email address of the user in the email variable
+    //store the email address of the user in the email variable
     email = req.body.email;
-  //check if the email was stored in the console
-  console.log(email);
-  //Store the options for Zoom API which will be used to make an API call later.
-  var options = {
-    //You can use a different uri if you're making an API call to a different Zoom endpoint.
-    uri: "https://api.zoom.us/v2/users/"+email, 
-    qs: {
-        status: 'active' 
-    },
-    auth: {
-        'bearer': token
-    },
-    headers: {
-        'User-Agent': 'Zoom-api-Jwt-Request',
-        'content-type': 'application/json'
-    },
-    json: true //Parse the JSON string in the response
-};
+    //check if the email was stored in the console
+    console.log(email);
+    //Store the options for Zoom API which will be used to make an API call later.
+    var options = {
+        //You can use a different uri if you're making an API call to a different Zoom endpoint.
+        uri: "https://api.zoom.us/v2/users/" + email,
+        qs: {
+            status: 'active'
+        },
+        auth: {
+            'bearer': token
+        },
+        headers: {
+            'User-Agent': 'Zoom-api-Jwt-Request',
+            'content-type': 'application/json'
+        },
+        json: true //Parse the JSON string in the response
+    };
 
-//Use request-promise module's .then() method to make request calls.
-rp(options)
-    .then(function (response) {
-      //printing the response on the console
-        console.log('User has', response);
-        //console.log(typeof response);
-        resp = response
-        //Adding html to the page
-        var title1 ='<center><h3>Your token: </h3></center>' 
-        var result1 = title1 + '<code><pre style="background-color:#aef8f9;">' + token + '</pre></code>';
-        var title ='<center><h3>User\'s information:</h3></center>' 
-        //Prettify the JSON format using pre tag and JSON.stringify
-        var result = title + '<code><pre style="background-color:#aef8f9;">'+JSON.stringify(resp, null, 2)+ '</pre></code>'
-        res.send(result1 + '<br>' + result);
- 
-    })
-    .catch(function (err) {
-        // API call failed...
-        console.log('API call failed, reason ', err);
-    });
+    //Use request-promise module's .then() method to make request calls.
+    rp(options)
+        .then(function (response) {
+            //printing the response on the console
+            console.log('User has', response);
+            //console.log(typeof response);
+            resp = response
+            //Adding html to the page
+            var title1 = '<center><h3>Your token: </h3></center>'
+            var result1 = title1 + '<code><pre style="background-color:#aef8f9;">' + token + '</pre></code>';
+            var title = '<center><h3>User\'s information:</h3></center>'
+            //Prettify the JSON format using pre tag and JSON.stringify
+            var result = title + '<code><pre style="background-color:#aef8f9;">' + JSON.stringify(resp, null, 2) + '</pre></code>'
+            res.send(result1 + '<br>' + result);
+
+        })
+        .catch(function (err) {
+            // API call failed...
+            console.log('API call failed, reason ', err);
+        });
 
 
 });
