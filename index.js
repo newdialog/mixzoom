@@ -13,8 +13,8 @@ const express = require('express');
 
 const app = express();
 
-var whitelist = ['https://mixopinions.org', 'https://www.mixopinions.org',
-    'https://app.mixopinions.org', 'https://test.mixopinions.org',
+var whitelist = ['https://mixopinions.com', 'https://www.mixopinions.com',
+    'https://app.mixopinions.com', 'https://test.mixopinions.com',
     'http://localhost', 'http://localhost:8000', 'https://localhost:8000', 
     'https://localhost', 'https://dinnertable.chat', 'https://www.dinnertable.chat',
     'https://test.dinnertable.chat'];
