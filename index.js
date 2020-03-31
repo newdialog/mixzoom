@@ -8,10 +8,26 @@ const cache = new NodeCache({
 const jwt = require('jsonwebtoken');
 const config = require('./config');
 const rp = require('request-promise');
-
+const cors = require('cors')
 const express = require('express');
 
 const app = express();
+
+var whitelist = ['https://mixopinions.org', 'https://www.mixopinions.org',
+    'http://localhost', 'http://localhost:8000', 'https://localhost:8000', 
+    'https://localhost'];
+    
+var corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    }
+}
+app.use(cors(corsOptions));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 var email, userid, resp;
@@ -88,14 +104,14 @@ function getKey(meeting) {
 
 // let cache = {};
 function onOnce(key) {
-    const cb = ( key, value ) => {
-        if(key===key) {
+    const cb = (key, value) => {
+        if (key === key) {
             cache.removeListener("set", cb);
             res(cache.get(key));
         }
     };
 
-    return new Promise( (res)=>{
+    return new Promise((res) => {
         cache.on("set", cb);
     });
 }
@@ -106,7 +122,7 @@ app.post('/make/:meeting', (req, res) => {
     // ------
     // if(MemoryStorage.[key]) return cache[key];
     const hasKey = cache.has(key);
-    const hasKeyLoading = cache.has(key+'Loading');
+    const hasKeyLoading = cache.has(key + 'Loading');
 
     // result => boolean
     if (hasKey) {
@@ -116,9 +132,9 @@ app.post('/make/:meeting', (req, res) => {
     }
 
     if (!hasKey) {
-        if(!hasKeyLoading) {
+        if (!hasKeyLoading) {
             console.log('fetching key');
-            cache.set(key+'Loading', true);
+            cache.set(key + 'Loading', true);
             generate(res, key);
         } else {
             console.log('waiting on key');
