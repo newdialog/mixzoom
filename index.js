@@ -15,8 +15,8 @@ const app = express();
 
 var whitelist = ['https://mixopinions.org', 'https://www.mixopinions.org',
     'http://localhost', 'http://localhost:8000', 'https://localhost:8000', 
-    'https://localhost'];
-    
+    'https://localhost', 'https://dinnertable.chat', 'https://www.dinnertable.chat'];
+
 var corsOptions = {
     origin: function (origin, callback) {
         if (whitelist.indexOf(origin) !== -1) {
