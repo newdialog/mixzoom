@@ -49,7 +49,7 @@ function makeToken() {
 }
 
 function generate(res, key) {
-    const token = makeToken();
+    const token = makeToken(redirect);
     const email = 'me'; // req.body.email;
     //check if the email was stored in the console
     console.log('/making key');
@@ -57,6 +57,10 @@ function generate(res, key) {
     var options = {
         method: 'POST',
         body: {
+            settings: {
+                participant_video: true,
+                approval_type: 2
+            }
         },
         //You can use a different uri if you're making an API call to a different Zoom endpoint.
         uri: "https://api.zoom.us/v2/users/" + email + "/meetings",
@@ -121,6 +125,8 @@ function onOnce(key) {
 app.post('/make/:meeting', (req, res) => {
     const meeting = req.params.meeting;
     const key = getKey(meeting);
+
+    const redirect = req.body.redirect || null;
     // ------
     // if(MemoryStorage.[key]) return cache[key];
     const hasKey = cache.has(key);
@@ -137,7 +143,7 @@ app.post('/make/:meeting', (req, res) => {
         if (!hasKeyLoading) {
             console.log('fetching key');
             cache.set(key + 'Loading', true);
-            generate(res, key);
+            generate(res, key, redirect);
         } else {
             console.log('waiting on key');
             const data = onOnce(key);
