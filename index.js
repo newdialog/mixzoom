@@ -80,6 +80,7 @@ function generate(res, key) {
     //Use request-promise module's .then() method to make request calls.
     rp(options)
         .then(function (response) {
+            response.murl = response.join_url;
             // cache[key] = response;
             cache.set(key, response);
             //printing the response on the console
