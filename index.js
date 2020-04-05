@@ -57,10 +57,6 @@ function generate(res, key) {
     var options = {
         method: 'POST',
         body: {
-            settings: {
-                participant_video: true,
-                approval_type: 2
-            }
         },
         //You can use a different uri if you're making an API call to a different Zoom endpoint.
         uri: "https://api.zoom.us/v2/users/" + email + "/meetings",
