@@ -57,10 +57,13 @@ function generate(res, key) {
     var options = {
         method: 'POST',
         body: {
+            start_time: (new Date()).toISOString(),
+            duration: 60,
             settings: {
                 // participant_video: false,
                 // host_video: false,
                 join_before_host: true,
+                enforce_login: false,
                 approval_type: 2
             }
         },
