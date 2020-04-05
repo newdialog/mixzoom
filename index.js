@@ -58,7 +58,9 @@ function generate(res, key) {
         method: 'POST',
         body: {
             settings: {
-                participant_video: true,
+                // participant_video: false,
+                // host_video: false,
+                join_before_host: true,
                 approval_type: 2
             }
         },
