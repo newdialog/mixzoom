@@ -13,7 +13,7 @@ const express = require('express');
 
 const app = express();
 
-var whitelist = ['https://mixopinions.com', 'https://www.mixopinions.com',
+var whitelist = ['http://localhost:3000', 'https://mixopinions.com', 'https://www.mixopinions.com',
     'https://app.mixopinions.com', 'https://test.mixopinions.com',
     'http://localhost', 'http://localhost:8000', 'https://localhost:8000', 
     'https://localhost', 'https://dinnertable.chat', 'https://www.dinnertable.chat',
@@ -21,7 +21,7 @@ var whitelist = ['https://mixopinions.com', 'https://www.mixopinions.com',
 
 var corsOptions = {
     origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1) {
+        if (!origin || whitelist.indexOf(origin) !== -1) {
             callback(null, true)
         } else {
             callback(new Error('Not allowed by CORS'))
@@ -49,7 +49,7 @@ function makeToken() {
 }
 
 function generate(res, key) {
-    const token = makeToken(redirect);
+    const token = makeToken();
     const email = 'me'; // req.body.email;
     //check if the email was stored in the console
     console.log('/making key');
@@ -57,6 +57,10 @@ function generate(res, key) {
     var options = {
         method: 'POST',
         body: {
+            settings: {
+                participant_video: true,
+                approval_type: 2
+            }
         },
         //You can use a different uri if you're making an API call to a different Zoom endpoint.
         uri: "https://api.zoom.us/v2/users/" + email + "/meetings",
@@ -79,8 +83,8 @@ function generate(res, key) {
             // cache[key] = response;
             cache.set(key, response);
             //printing the response on the console
-            console.log('User has', response);
-            //console.log(typeof response);
+            // console.log('User has', response);
+            // console.log(typeof response);
             resp = response
             res.send(resp);
 
